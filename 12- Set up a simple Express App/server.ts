@@ -1,17 +1,45 @@
-import * as planetsController from './controllers/planets';
 import express from 'express';
+import 'express-async-errors';
+import morgan from 'morgan';
+import { getAll, getOneById, create, createImage, updateById, deleteById } from "./controllers/planets";
+import { logIn, signUp } from "./controllers/user";
+import multer from "multer";
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "./uploads")
+    },
+    filename: (req, file, cb) => {
+        cb(null, file.originalname);
+    },
+});
+
+const upload = multer({ storage })
+
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
-app.use(express.json());
+app.use(morgan('dev'));
+app.use(express.json())
 
-app.get('/api/planets', planetsController.getAll);
-app.get('/api/planets/:id', planetsController.getOneById);
-app.post('/api/planets', planetsController.create);
-app.put('/api/planets/:id', planetsController.updateById);
-app.delete('/api/planets/:id', planetsController.deleteById);
+
+app.get("/api/planets", getAll);
+
+app.get("/api/planets/:id", getOneById);
+
+app.post("/api/planets", create);
+
+app.put("/api/planets/:id", updateById);
+
+app.delete("/api/planets/:id", deleteById);
+
+app.post("/api/planets/:id/image", (upload.single("image") as any), createImage);
+
+app.post("/api/users/login", logIn);
+app.post("/api/users/signup", signUp);
 
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Example app listening on port http://localhost:${port}`);
 });
+

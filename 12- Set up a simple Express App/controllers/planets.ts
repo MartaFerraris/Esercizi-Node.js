@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import dotenv from 'dotenv';
+import {db} from "../db";
 
 type Planet = {
     id: number,
@@ -37,7 +37,6 @@ export const getOneById = (req: Request, res: Response) => {
 export const create = (req: Request, res: Response) => {
     const newPlanet: Planet = req.body;
 
-    // Assuming that the id is provided in the request body
     if (!newPlanet.id || !newPlanet.name) {
         return res.status(400).json({ error: 'Invalid planet data' });
     }
@@ -45,6 +44,19 @@ export const create = (req: Request, res: Response) => {
     planets.push(newPlanet);
     res.status(201).json({ msg: 'Planet created successfully' });
 };
+
+export const createImage = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const fileName = req.file?.path;
+
+    if (fileName) {
+        db.none(`UPDATE planets SET image=$2 WHERE id=$1`, [id, fileName])
+        res.status(201).json({ msg: "Planet image uploaded" });
+    } else {
+        res.status(400).json({ msg: "Planet uploading failed" });
+    }
+}
+
 
 export const updateById = (req: Request, res: Response) => {
     const planetId = parseInt(req.params.id);
