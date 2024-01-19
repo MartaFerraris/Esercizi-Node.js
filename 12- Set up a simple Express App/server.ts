@@ -35,14 +35,13 @@ setupDb();
 type Planet = {
     id: number;
     name: string;
-    image?: Buffer; // Using Buffer to store image data
+    image?: Buffer; 
 };
 
 type Planets = Planet[];
 
 app.use(express.json());
 
-/* Middleware di validazione per Joi */
 const validatePlanet = (planet: Planet) => {
     const schema = Joi.object({
         id: Joi.number().integer().min(1).required(),
