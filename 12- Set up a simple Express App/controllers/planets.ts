@@ -1,9 +1,11 @@
-import { Request, Response } from 'express';
-import dotenv from 'dotenv';
+import { Request, Response } from "express";
+import Joi from "joi";
+import { db } from "../db.js";
+
 
 type Planet = {
-    id: number,
-    name: string,
+    id: number;
+    name: string;
 };
 
 type Planets = Planet[];
@@ -19,50 +21,66 @@ let planets: Planets = [
     },
 ];
 
-export const getAll = (req: Request, res: Response) => {
-    res.json(planets);
-};
 
-export const getOneById = (req: Request, res: Response) => {
-    const planetId = parseInt(req.params.id);
-    const planet = planets.find(p => p.id === planetId);
+const getAll = async (req: Request, res: Response) => {
+    const planets = await db.many(`SELECT * FROM planets;`);
+    console.log(planets)
+    res.status(200).json(planets);
+}
 
-    if (!planet) {
-        return res.status(404).json({ error: 'Planet not found' });
+const getOneById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const planet = await db.one(`SELECT * FROM planets WHERE id=$1;`, Number(id));
+
+    res.status(200).json(planet);
+}
+
+const planetScheme = Joi.object({
+    id: Joi.number().integer().required(),
+    name: Joi.string().required(),
+})
+
+const create = async (req: Request, res: Response) => {
+    const { id, name } = req.body;
+    const newPlanet: Planet = { id: id, name };
+    const newPlanetValidation = planetScheme.validate(newPlanet)
+
+    if (newPlanetValidation.error) {
+        return res.status(400).json({ msg: newPlanetValidation.error.details[0].message })
+    } else {
+        await db.none(`INSERT INTO planets (name) VALUES ($1)`, name)
+        res.status(201).json({ msg: "The planet was created" });
+    }
+}
+
+const createImage = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const fileName = req.file?.path;
+
+    if (fileName) {
+        db.none(`UPDATE planets SET image=$2 WHERE id=$1`, [id, fileName])
+        res.status(201).json({ msg: "Planet image uploaded" });
+    } else {
+        res.status(400).json({ msg: "Planet uploading failed" });
     }
 
-    res.json(planet);
-};
 
-export const create = (req: Request, res: Response) => {
-    const newPlanet: Planet = req.body;
+}
 
-    // Assuming that the id is provided in the request body
-    if (!newPlanet.id || !newPlanet.name) {
-        return res.status(400).json({ error: 'Invalid planet data' });
-    }
+const updateById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { name } = req.body;
+    await db.none(`UPDATE planets SET name=$2 WHERE id=$1`, [id, name])
 
-    planets.push(newPlanet);
-    res.status(201).json({ msg: 'Planet created successfully' });
-};
+    res.status(201).json({ msg: "The planet was updated" });
+}
 
-export const updateById = (req: Request, res: Response) => {
-    const planetId = parseInt(req.params.id);
-    const updatedPlanet: Planet = req.body;
+const deleteById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await db.none(`DELETE FROM planets WHERE id=$1`, Number(id))
 
-    const index = planets.findIndex(p => p.id === planetId);
+    console.log(planets)
+    res.status(201).json({ msg: "The planet was deleted" });
+}
 
-    if (index === -1) {
-        return res.status(404).json({ error: 'Planet not found' });
-    }
-
-    planets[index] = { ...planets[index], ...updatedPlanet };
-    res.json({ msg: 'Planet updated successfully' });
-};
-
-export const deleteById = (req: Request, res: Response) => {
-    const planetId = parseInt(req.params.id);
-
-    planets = planets.filter(p => p.id !== planetId);
-    res.json({ msg: 'Planet deleted successfully' });
-};
+export { getAll, getOneById, create, createImage, updateById, deleteById }

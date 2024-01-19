@@ -1,36 +1,30 @@
-# NodeJS Part 2 :: Exercise 1 :: Set up a simple Express App
+# NodeJS Part 2 :: Exercise 6 :: JWT Auth part 1
 
 ## Do
 
-- Write simple Express server that listens on port `3000` (use dotenv to specify the port)
-- Create a dummy "database" of `planets` using a `let` variable. (You will use this data in further exercises.)
-- Configure your app (`app.use()`) to:
-  - accept JSON from the Client
-  - log the Client's requests
+- Create `users` table in Postgres DB.
+- Set up Passport authentication with JWT.
+  - Use `SECRET` key from `.env`
 
 ## Use
 
-- Dummy database with initial data:
+- Use `passport` and `passport-jwt` packages
+- Create `users` table SQL query:
 
-  ```js
-  type Planet = {
-    id: number,
-    name: string,
-  };
+  ```sql
+  DROP TABLE IF EXISTS users;
 
-  type Planets = Planet[];
-
-  let planets: Planets = [
-    {
-      id: 1,
-      name: "Earth",
-    },
-    {
-      id: 2,
-      name: "Mars",
-    },
-  ];
+  CREATE TABLE users (
+    id SERIAL NOT NULL PRIMARY KEY,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL,
+    token TEXT
+  );
   ```
 
-- `express-async-errors`
-- `morgan`
+- Use `dotenv` package
+- Create `.env` file and store `SECRET` key
+
+## Check
+
+- Use Postman to test the routes.
